@@ -1,2 +1,1 @@
-"# QR Code API" 
- 
+"# QR Code API"    
