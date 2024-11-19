@@ -1,6 +1,6 @@
 # Use an official lightweight Python image.
 # 3.12-slim variant is chosen for a balance between size and utility.
-FROM python:3.12-slim-bullseye as base
+FROM python:3.12-slim
 
 # Set environment variables:
 # PYTHONUNBUFFERED: Prevents Python from buffering stdout and stderr
@@ -16,7 +16,7 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=on
 
 # Set the working directory inside the container
-WORKDIR /myapp
+WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update \
@@ -27,22 +27,23 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy only the requirements, to cache them in Docker layer
-COPY ./requirements.txt /myapp/requirements.txt
+COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --upgrade pip \
-    && pip install -r requirements.txt
+    && pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of your application's code
-COPY . /myapp
-# Copy the startup script and make it executable
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
+COPY . .
+
+# Create QR codes directory
+RUN mkdir -p qr_codes && chmod 777 qr_codes
+
 # Run the application as a non-root user for security
 RUN useradd -m myuser
 USER myuser
 
 # Tell Docker about the port we'll run on.
-EXPOSE 8000
+EXPOSE 80
 
-CMD ["/start.sh"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
